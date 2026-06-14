@@ -66,8 +66,8 @@ export default function Game({ username, startLevel, initialMistakes }: Props) {
   const handleTimeout = useCallback(() => {
     setStreak(0);
     setStatus("timeout");
-    setTimeout(() => startBurst(level), 1500);
-  }, [level, startBurst]);
+    // Wait for the player to tap "Try Again" — no auto-restart.
+  }, []);
 
   // Handle a submitted answer.
   const resolve = useCallback(
@@ -80,7 +80,7 @@ export default function Game({ username, startLevel, initialMistakes }: Props) {
           .catch(() => {});
         setStreak(0);
         setStatus("wrong");
-        setTimeout(() => startBurst(level), 1500);
+        // Wait for the player to tap "Try Again" — no auto-restart.
         return;
       }
 
@@ -251,11 +251,18 @@ export default function Game({ username, startLevel, initialMistakes }: Props) {
                 </span>
               )}
               {status === "timeout" && (
-                <span className="text-red-500">
-                  Time&apos;s up! Try again.
-                </span>
+                <span className="text-red-500">Time&apos;s up!</span>
               )}
             </div>
+
+            {(status === "wrong" || status === "timeout") && (
+              <button
+                onClick={() => startBurst(level)}
+                className="rounded-full bg-sky-500 px-8 py-4 text-xl font-bold text-white shadow active:scale-95"
+              >
+                Try Again
+              </button>
+            )}
           </>
         )}
       </section>
