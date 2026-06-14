@@ -181,8 +181,9 @@ export default function Game({ username, startLevel, initialMistakes }: Props) {
         </button>
       </header>
 
-      {/* Streak progress + burst clock */}
-      <div className="px-5 pt-4">
+      {/* Streak progress + burst clock (hidden on the level-up screen) */}
+      {status !== "levelup" && (
+        <div className="px-5 pt-4">
         <div className="mb-1 flex justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
           <span>
             Streak {streak} / {passTarget}
@@ -208,7 +209,8 @@ export default function Game({ username, startLevel, initialMistakes }: Props) {
             style={{ width: `${status === "playing" ? timePct : 100}%` }}
           />
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Equation */}
       <section className="flex flex-1 flex-col items-center justify-center gap-6 px-5">
