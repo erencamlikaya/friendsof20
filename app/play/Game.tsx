@@ -95,12 +95,8 @@ export default function Game({ username, startLevel, initialMistakes }: Props) {
       if (newStreak >= gameConfig.streakToPass && !atMaxLevel) {
         setStreak(newStreak);
         setStatus("levelup");
-        const target = level + 1;
-        advanceLevel(target).catch(() => {});
-        setTimeout(() => {
-          setLevel(target);
-          startBurst(target);
-        }, 2200);
+        // Persist progress now; wait for a "Start" tap to begin the next level.
+        advanceLevel(level + 1).catch(() => {});
         return;
       }
 
@@ -108,7 +104,7 @@ export default function Game({ username, startLevel, initialMistakes }: Props) {
       setStreak(newStreak);
       continueBurst(level);
     },
-    [question, streak, level, atMaxLevel, startBurst, continueBurst],
+    [question, streak, level, atMaxLevel, continueBurst],
   );
 
   // Single burst clock — keeps running across questions while playing.
@@ -212,14 +208,24 @@ export default function Game({ username, startLevel, initialMistakes }: Props) {
       {/* Equation */}
       <section className="flex flex-1 flex-col items-center justify-center gap-6 px-5">
         {status === "levelup" ? (
-          <div className="flex flex-col items-center gap-3 text-center">
+          <div className="flex flex-col items-center gap-4 text-center">
             <div className="text-6xl">🎉</div>
             <h2 className="text-3xl font-extrabold text-emerald-500">
               Level up!
             </h2>
             <p className="text-lg text-slate-600 dark:text-slate-300">
-              Now you know the friends of {level + 1}!
+              You mastered the friends of {level}!
             </p>
+            <button
+              onClick={() => {
+                const target = level + 1;
+                setLevel(target);
+                startBurst(target);
+              }}
+              className="rounded-full bg-emerald-500 px-8 py-4 text-xl font-bold text-white shadow active:scale-95"
+            >
+              Start friends of {level + 1}
+            </button>
           </div>
         ) : (
           <>
