@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { gameConfig } from "@/config/game";
+import { gameConfig, questionsToPass, burstTimeMs } from "@/config/game";
 import {
   nextQuestion,
   questionText,
@@ -28,7 +28,11 @@ export default function Game({ username, startLevel, initialMistakes }: Props) {
   );
   const [input, setInput] = useState("");
   const [status, setStatus] = useState<Status>("playing");
-  const [timeLeft, setTimeLeft] = useState<number>(gameConfig.burstTimeLimitMs);
+  const [timeLeft, setTimeLeft] = useState<number>(() => burstTimeMs(startLevel));
+
+  // Per-level targets (recompute when the level changes).
+  const passTarget = questionsToPass(level);
+  const burstMs = burstTimeMs(level);
 
   // Current values for use inside effects/handlers without stale closures.
   const mistakesRef = useRef(mistakes);
@@ -41,14 +45,15 @@ export default function Game({ username, startLevel, initialMistakes }: Props) {
 
   const atMaxLevel = level >= gameConfig.maxLevel;
 
-  // Begin a fresh burst: reset the streak and restart the single 15s clock.
+  // Begin a fresh burst: reset the streak and restart the single burst clock.
   const startBurst = useCallback((forLevel: number) => {
+    const limit = burstTimeMs(forLevel);
     setStreak(0);
     setQuestion(nextQuestion(forLevel, mistakesRef.current));
     setInput("");
     setStatus("playing");
-    deadlineRef.current = Date.now() + gameConfig.burstTimeLimitMs;
-    setTimeLeft(gameConfig.burstTimeLimitMs);
+    deadlineRef.current = Date.now() + limit;
+    setTimeLeft(limit);
   }, []);
 
   // Next question within the SAME burst — the clock keeps running.
@@ -59,8 +64,8 @@ export default function Game({ username, startLevel, initialMistakes }: Props) {
 
   // Start the clock for the first burst on mount.
   useEffect(() => {
-    deadlineRef.current = Date.now() + gameConfig.burstTimeLimitMs;
-  }, []);
+    deadlineRef.current = Date.now() + burstTimeMs(startLevel);
+  }, [startLevel]);
 
   // The burst clock ran out before reaching the target streak.
   const handleTimeout = useCallback(() => {
@@ -92,7 +97,7 @@ export default function Game({ username, startLevel, initialMistakes }: Props) {
       }
 
       const newStreak = streak + 1;
-      if (newStreak >= gameConfig.streakToPass && !atMaxLevel) {
+      if (newStreak >= questionsToPass(level) && !atMaxLevel) {
         setStreak(newStreak);
         setStatus("levelup");
         // Persist progress now; wait for a "Start" tap to begin the next level.
@@ -154,7 +159,7 @@ export default function Game({ username, startLevel, initialMistakes }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [submit, press, backspace]);
 
-  const timePct = Math.max(0, (timeLeft / gameConfig.burstTimeLimitMs) * 100);
+  const timePct = Math.max(0, (timeLeft / burstMs) * 100);
   const seconds = (timeLeft / 1000).toFixed(1);
   const tokens = questionText(question).split(" ");
 
@@ -180,7 +185,7 @@ export default function Game({ username, startLevel, initialMistakes }: Props) {
       <div className="px-5 pt-4">
         <div className="mb-1 flex justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
           <span>
-            Streak {streak} / {gameConfig.streakToPass}
+            Streak {streak} / {passTarget}
           </span>
           <span className={timePct < 30 ? "text-red-500" : undefined}>
             {seconds}s
@@ -190,7 +195,7 @@ export default function Game({ username, startLevel, initialMistakes }: Props) {
           <div
             className="h-full rounded-full bg-emerald-400 transition-all duration-200"
             style={{
-              width: `${Math.min(100, (streak / gameConfig.streakToPass) * 100)}%`,
+              width: `${Math.min(100, (streak / passTarget) * 100)}%`,
             }}
           />
         </div>

@@ -11,10 +11,16 @@ of N". Vertical layout with an on-screen numpad; built for phones.
 - Question format `x + y = N` with one term blank:
   - **sum** form: `x + y = ?` (answer `N`)
   - **addend** form: `x + ? = N` (answer `N - x`, doubles as subtraction)
-- A **burst** is a single shared 15s clock. Reach `streakToPass` (10) correct
-  before it runs out to pass the level. A wrong answer OR the clock expiring
-  ends the burst and resets the streak. Correct answers advance instantly and
-  the clock keeps ticking across questions.
+- A **burst** is a single shared clock. Reach the level's question target
+  before it runs out to pass. Both the target and the clock scale with the
+  level (see formulas in `config/game.ts`):
+  `combos(N) = floor(N/2)+1`, `questionsToPass = combos × questionsPerCombo (3)`,
+  `burstMs = questionsToPass × msPerQuestion (2000)`. E.g. level 7 → 4 combos →
+  12 questions → 24s.
+- A wrong answer OR the clock expiring ends the burst (player taps "Try Again");
+  a level-up pauses on a "Start friends of N" button. Correct answers advance
+  instantly and submit automatically once the typed value matches the answer's
+  digit count. The clock keeps ticking across questions within a burst.
 - Wrong answers are logged per-user and re-asked (`mistakeInjectionRate`); a
   mistake is retired after `mistakeClearStreak` (3) consecutive correct
   re-answers.
