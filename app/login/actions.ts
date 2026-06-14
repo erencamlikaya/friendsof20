@@ -56,8 +56,15 @@ async function signup(formData: FormData): Promise<AuthState> {
     password,
   });
 
-  if (error || !data.user) {
-    return { error: "That username may already be taken. Try another." };
+  if (error) {
+    console.error("signup signUp error:", error.status, error.message);
+    if (/already registered|already exists/i.test(error.message)) {
+      return { error: "That username is taken. Try another." };
+    }
+    return { error: `Sign up failed: ${error.message}` };
+  }
+  if (!data.user) {
+    return { error: "Sign up failed. Please try again." };
   }
 
   // Create the player's profile row (RLS allows insert for the new session).
@@ -68,7 +75,8 @@ async function signup(formData: FormData): Promise<AuthState> {
   });
 
   if (profileError) {
-    return { error: "Could not finish creating your account. Try again." };
+    console.error("signup profile insert error:", profileError);
+    return { error: `Could not finish creating your account: ${profileError.message}` };
   }
 
   redirect("/play");
