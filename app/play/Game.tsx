@@ -132,9 +132,20 @@ export default function Game({ username, startLevel, initialMistakes }: Props) {
     resolve(Number(input) === question.answer);
   }, [status, input, question, resolve]);
 
-  const press = (digit: string) =>
-    setInput((v) => (v.length >= 2 ? v : v + digit));
-  const backspace = () => setInput((v) => v.slice(0, -1));
+  // Append a digit and auto-submit as soon as the typed answer has as many
+  // digits as the correct answer (1 or 2) — no confirm button needed.
+  const press = useCallback(
+    (digit: string) => {
+      if (status !== "playing" || input.length >= 2) return;
+      const next = input + digit;
+      setInput(next);
+      if (next.length >= String(question.answer).length) {
+        resolve(Number(next) === question.answer);
+      }
+    },
+    [status, input, question, resolve],
+  );
+  const backspace = useCallback(() => setInput((v) => v.slice(0, -1)), []);
 
   // Physical keyboard support (desktop testing / tablets with keyboards).
   useEffect(() => {
@@ -145,7 +156,7 @@ export default function Game({ username, startLevel, initialMistakes }: Props) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [submit]);
+  }, [submit, press, backspace]);
 
   const timePct = Math.max(0, (timeLeft / gameConfig.burstTimeLimitMs) * 100);
   const seconds = (timeLeft / 1000).toFixed(1);
@@ -256,19 +267,13 @@ export default function Game({ username, startLevel, initialMistakes }: Props) {
             {d}
           </NumKey>
         ))}
-        <NumKey onClick={backspace} disabled={status !== "playing"}>
-          ⌫
-        </NumKey>
+        <div aria-hidden />
         <NumKey onClick={() => press("0")} disabled={status !== "playing"}>
           0
         </NumKey>
-        <button
-          onClick={submit}
-          disabled={status !== "playing" || input === ""}
-          className="rounded-2xl bg-emerald-500 py-5 text-2xl font-bold text-white shadow active:scale-95 disabled:opacity-40"
-        >
-          ✓
-        </button>
+        <NumKey onClick={backspace} disabled={status !== "playing"}>
+          ⌫
+        </NumKey>
       </section>
     </main>
   );
